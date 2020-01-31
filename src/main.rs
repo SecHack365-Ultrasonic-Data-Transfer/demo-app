@@ -7,13 +7,25 @@ fn main() {
         .content(web_view::Content::Html(HTML))
         .size(640, 480)
         .user_data(())
-        .invoke_handler(|_, _| Ok(()))
+        .invoke_handler(|_webview, arg| {
+            if arg == "stream" {
+                Command::new("python3")
+                    .args(&["./assets/python/receive.py"])
+                    .spawn().expect("failed to run this command.");
+            }
+            Ok(())
+        })
         .run().expect("failed to create window.");
 
+    /*
     Command::new("ls")
         .args(&["-a"])
         .spawn().expect("failed to run this command.");
+    */
 }
 
-const HTML: &str = r#"udtp"#;
+const HTML: &str = r#"<button onclick="external.invoke('stream')">stream</button>"#;
+
+#[test]
+fn nop() { assert_eq!(0, 0); }
 
