@@ -4,6 +4,7 @@
 #参考 : https://fardog.io/blog/2013/02/16/making-noise-in-python/
 #複数音鳴らせれば(和音を作り出せれば)、伝送ミスのチェックと再送要求が楽になる?
 
+import sys
 
 #coding:utf-8
 import pyaudio
@@ -21,12 +22,14 @@ from scipy.io import wavfile
 
 import parity_bit
 
+import make_header_latest
+
 #音声出力関係
 #freq_std = 1760
 freq_math = {}
 
 #---
-freq_std = 440
+freq_std = 18000
 
 #文字→音声化のための変換関係
 sp_len = 0
@@ -57,9 +60,10 @@ def sine(frequency, length, rate):
 
 #16進→周波数(音階テイスト)
 def str_to_sound(code):
-    out_freq = freq_std * math.pow(2, int(code, 16)*(1/12))
+    #out_freq = freq_std * math.pow(2, int(code, 16)*(1/12))
+    out_freq = freq_std +(100 * int(code, 16))
     return out_freq
-    
+
 #オーディオ鳴らす
 def play_tone(stream, frequency, length=1.0, rate=44100):
     print(float(frequency), length, rate)
@@ -67,11 +71,12 @@ def play_tone(stream, frequency, length=1.0, rate=44100):
     chunks.append(sine(int(frequency), length, rate))
     chunk = numpy.concatenate(chunks) * 0.25
     stream.write(chunk.astype(numpy.float32).tostring())
-    
+
     return chunk
-    
+
 #文字入れたらasciiコード
 def txt_to_asciicode(input):
+    print(input)
     sp_len = len(input)
     sp_in = list(input)  #input -> 1文字ずつ
     sp_out = ""
@@ -91,6 +96,7 @@ def txt_to_asciicode(input):
     sp_out += sp_after_out
 
     #print('ラスト',sp_out)
+    print(sp_out)
     return sp_out
 
 def send(out_txt):
@@ -110,9 +116,18 @@ def send(out_txt):
     p.terminate()
 
 if __name__ == '__main__':
-    in_txt = input("send message :")
+    in_txt = sys.argv[1]; #input("send message :")
+
+    my_code = "aa"  #ヘッダ部の初期値設定(決め打ちで入れてるけど，実際にはデバイスに即した値を入れるべき)
+    oth_code = "11"
+    recv_seq = -1
+    recv_ack = -1
+    recv_data_len = 0
+    flag = ["ACK"]
+    #out_txt,_ ,_ ,_ ,_ ,_ ,_   = make_header_latest.main(my_code, oth_code, recv_seq, recv_ack, recv_data_len, flag)
+
     out_txt = txt_to_asciicode(in_txt)
-    
+
     print(in_txt, "→", out_txt)
     p = pyaudio.PyAudio()
     #connect
@@ -130,9 +145,9 @@ if __name__ == '__main__':
         data1 = []
         data2 = []
         chkNum1 = 0
- 
+
         freqList = np.fft.fftfreq(44100, d = 0.5 / RATE)
-        
+
         stream = p.open(format = pyaudio.paInt16,
                 channels = 1,
                 input_device_index = 0,
@@ -140,7 +155,7 @@ if __name__ == '__main__':
                 frames_per_buffer = CHUNK,
                 input = True,
                 output = False)
- 
+
         try:
             print('check...',end='')
             print('.',end='')
@@ -150,7 +165,7 @@ if __name__ == '__main__':
                 d = np.frombuffer(stream.read(CHUNK), dtype='int16')
                 #print(d)
                 if sound_count == 0:
-                    
+
                     data1.append(d)
                     data2.append(d)
 
@@ -189,30 +204,21 @@ if __name__ == '__main__':
                             print('接続完了')
                         else:
                             chkNum1 = 0
-                        
-                    this_time = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-                    #file_name = this_time + '.wav'
 
-                    #wf = wave.open(file_name, 'w')
-                    #wf.setnchannels(1)
-                    #wf.setsampwidth(2)
-                    #wf.setframerate(RATE)
-                    #wf.writeframes(data)
-                    #wf.close()
+                    this_time = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
 
                     print('The bell is ringing! ' + this_time)
                     data1 = []
                     data2 = []
-                    #sound_count = 0
                     break
                 else :
                     print('uwaaa')
                 sound_count += 1
-            print('return') 
+            print('return')
             sound_count += 1
             print(sound_count)
-            
-        except KeyboardInterrupt:   
+
+        except KeyboardInterrupt:
                     print('keyborad')
                     stream.stop_stream()
                     stream.close()

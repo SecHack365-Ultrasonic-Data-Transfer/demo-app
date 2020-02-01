@@ -1,5 +1,4 @@
 import pyaudio
-import math
 import numpy as np
 import wave
 from datetime import datetime, timedelta
@@ -12,24 +11,11 @@ CHUNK = 1024
 RATE = 44100
 l = 10 ** 5
 sound_count = 0
-
+ 
 data1 = []
 data2 = []
 chkNum1 = 0
-
-# MacOS で play コマンドが使えなかったので
-def sine(freq, leng, rate):
-    leng = int(leng * rate)
-    fact = float(freq) * (math.pi * 2) / rate
-    return np.sin(np.arange(leng) * fact)
-
-def play_tone(stream, freq, leng=0.1, rate=44100):
-    chunks = []
-    chunks.append(sine(int(freq), leng, rate));
-    chunk = np.concatenate(chunks) * 0.25;
-    stream.write(chunk.astype(np.float32).tostring())
-    return chunk
-
+ 
 freqList = np.fft.fftfreq(44100, d = 0.5 / RATE)
 print(freqList)
 p = pyaudio.PyAudio()
@@ -40,7 +26,7 @@ stream = p.open(format = pyaudio.paInt16,
                 frames_per_buffer = CHUNK,
                 input = True,
                 output = False)
-
+ 
 try:
     print('check...',end='')
     while stream.is_active():
@@ -51,10 +37,10 @@ try:
             d = np.frombuffer(stream.read(CHUNK), dtype='int16')
             #print(d)
             if sound_count == 0:
-
+                
                 data1.append(d)
                 data2.append(d)
-
+ 
             else:
                 data1.append(d)
                 data2.append(d)
@@ -65,15 +51,15 @@ try:
                 data = np.asarray(data1).flatten()
                 fft_data = np.fft.fft(data)
                 data1 = []
-
+ 
             else:
                 data = np.asarray(data2).flatten()
                 #print(data)
                 fft_data = np.fft.fft(data)
                 data2 = []
-
+ 
             fft_abs = np.abs(fft_data)
-
+ 
             data1000 = fft_abs[np.where((freqList > 1500) & (freqList < 2500))]    #2050Hz付近の周波数成分
             #data2600 = fft_abs[np.where((freqList > 2500) & (freqList < 3000))]    #2600Hz付近の周波数成分
             #print(data2050)
@@ -90,17 +76,17 @@ try:
                         print('接続要求')
                     else:
                         chkNum1 = 0
-
+                    
                 this_time = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
                 #file_name = this_time + '.wav'
-
+ 
                 #wf = wave.open(file_name, 'w')
                 #wf.setnchannels(1)
                 #wf.setsampwidth(2)
                 #wf.setframerate(RATE)
                 #wf.writeframes(data)
                 #wf.close()
-
+ 
                 print('The bell is ringing! ' + this_time)
                 data1 = []
                 data2 = []
@@ -108,9 +94,9 @@ try:
                 break
             else :
                 print('uwaaa')
-
+ 
         sound_count += 1
-    print('end')
+    print('end') 
     #ここから返信ですぅ
 
 
@@ -123,9 +109,7 @@ try:
     else:
         # Macの場合には、Macに標準インストールされたplayコマンドを使います.
         import os
-        os.system('play -n synth %s sin %s' % (dur/1000, freq)) # Mac 使えなかった,,,
-        #play_tone(stream, freq)
-
+        os.system('play -n synth %s sin %s' % (dur/1000, freq))
     #同期
     now = datetime.now()
     comp = datetime(now.year, now.month, now.day, now.hour, now.minute+1,0)
@@ -137,7 +121,7 @@ try:
     #スタート
     scheduler.run()
 
-except KeyboardInterrupt:
+except KeyboardInterrupt:   
     print('keyborad')
     stream.stop_stream()
     stream.close()

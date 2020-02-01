@@ -10,7 +10,7 @@ import wave
 import math
 import parity_check
 
-freq_std = 440
+freq_std = 18000
 
 
 #if __name__ == '__main__':
@@ -27,7 +27,7 @@ def get_wave():
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 44100
-    RECORD_SECONDS = 3
+    RECORD_SECONDS = 11
     WAVE_OUTPUT_FILENAME = "sample.wav"
 
     p = pyaudio.PyAudio()
@@ -72,19 +72,13 @@ def get_wave():
         in_freq = amplitude.index(max(amplitude))  #1番大きい振幅を拾ってるだけ(雑音出たら、たぶん上手くいかない)
         
         for j in range(16):
-            l_lim = ((freq_std * math.pow(2, (j-1) *(1/12)))+(freq_std * math.pow(2, j *(1/12))))/2
-            h_lim = ((freq_std * math.pow(2, (j+1) *(1/12)))+(freq_std * math.pow(2, j *(1/12))))/2
+            l_lim = ((freq_std + 100*(j-1))+(freq_std + 100* j))/2
+            h_lim = ((freq_std + 100*(j+1))+(freq_std + 100*j))/2
             if (in_freq > l_lim )and(in_freq < h_lim):
                 in_code += hex(j)[2:4]
                 break
         print(i, in_freq, j)
 
-        #描画周り
-        #plt.plot(freqList, amplitude, marker=".", linestyle="-", label = "fft plot")
-        #plt.axis([0, 2000, 0, 7000])
-        #plt.xlabel("frequency [Hz]")
-        #plt.ylabel("amplitude")
-        
         plt.show()
     in_txt,parity_flg = parity_check.parity_checker(in_code)
     #for code in range(int(in_sec/2)):
